@@ -6,13 +6,13 @@
 class Controller {
     // Load model
     public function model($model) {
-        require_once '../app/models/' . $model . '.php';
+        require_once APPROOT . '/models/' . $model . '.php';
         return new $model();
     }
 
     // Load view
     public function view($view, $data = []) {
-        $viewPath = '../app/views/' . $view . '.php';
+        $viewPath = APPROOT . '/views/' . $view . '.php';
         if (file_exists($viewPath)) {
             require_once $viewPath;
         } else {

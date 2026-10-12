@@ -13,13 +13,13 @@
 				<div class="product-card glass animate-up">
 					<div class="product-image">
 						<div style="height:200px; background: linear-gradient(135deg, #1e293b, #0f172a); border-radius:8px 8px 0 0; display:flex; align-items:center; justify-content:center;">
-							<i class="fa-solid fa-box text-muted" style="font-size:3rem;"></i>
+							<i class="bi bi-box-seam text-muted-c" style="font-size:3rem;"></i>
 						</div>
 					</div>
 					<div class="product-info" style="padding:1.5rem;">
-						<span style="font-size:0.8rem; color:var(--primary-light); text-transform:uppercase; font-weight:bold;"><?php echo $product->category; ?></span>
-						<h3 style="margin:0.5rem 0;"><?php echo $product->title; ?></h3>
-						<p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;"><?php echo substr($product->description,0,80); ?>...</p>
+						<span style="font-size:0.8rem; color:var(--brand-primary); text-transform:uppercase; font-weight:bold;"><?php echo htmlspecialchars($product->category); ?></span>
+						<h3 style="margin:0.5rem 0;"><?php echo htmlspecialchars($product->title); ?></h3>
+						<p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1rem;"><?php echo htmlspecialchars(substr($product->description,0,80)); ?>...</p>
 						<div style="display:flex; justify-content:space-between; align-items:center;">
 							<strong style="font-size:1.25rem; color:var(--brand-emerald);">ZMW <?php echo number_format($product->price,2); ?></strong>
 							<div style="display:flex; gap:0.5rem;">
@@ -27,8 +27,8 @@
 								<a href="<?php echo URLROOT; ?>/cart/add/<?php echo $product->id; ?>" class="btn btn-glass" style="padding:0.45rem 0.9rem;">Add to Cart</a>
 							</div>
 						</div>
-						<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border-color); font-size:0.8rem; color:var(--text-muted);">
-							<i class="fa-solid fa-store"></i> Sold by: <?php echo htmlspecialchars($product->seller_name); ?>
+						<div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--glass-border); font-size:0.8rem; color:var(--text-muted);">
+							<i class="bi bi-shop"></i> Sold by: <?php echo htmlspecialchars($product->seller_name); ?>
 						</div>
 					</div>
 				</div>

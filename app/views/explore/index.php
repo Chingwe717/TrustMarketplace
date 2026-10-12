@@ -8,27 +8,32 @@
             <p>No products available right now.</p>
         <?php else : ?>
             <?php foreach($data['products'] as $product) : ?>
+                <?php
+                    $productImages = json_decode($product->images ?? '[]', true) ?: [];
+                    $productImage = $productImages[0] ?? '';
+                ?>
                 <div class="product-card glass animate-up">
                     <div class="product-image">
-                        <!-- Placeholder image for now -->
-                        <div style="height: 200px; background: linear-gradient(135deg, #1e293b, #0f172a); border-radius: 8px 8px 0 0; display:flex; align-items:center; justify-content:center;">
-                            <i class="fa-solid fa-box text-muted" style="font-size: 3rem;"></i>
-                        </div>
+                        <?php if ($productImage !== '') : ?>
+                            <img src="<?php echo URLROOT . '/' . htmlspecialchars(ltrim($productImage, '/'), ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($product->title, ENT_QUOTES, 'UTF-8'); ?>" style="width:100%; height:200px; object-fit:cover;">
+                        <?php else : ?>
+                            <div class="product-img-placeholder"><i class="bi bi-box-seam"></i></div>
+                        <?php endif; ?>
                     </div>
                     <div class="product-info" style="padding: 1.5rem;">
-                        <span style="font-size: 0.8rem; color: var(--primary-light); text-transform: uppercase; font-weight: bold;"><?php echo $product->category; ?></span>
-                        <h3 style="margin: 0.5rem 0;"><?php echo $product->title; ?></h3>
-                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;"><?php echo substr($product->description, 0, 80); ?>...</p>
+                        <span style="font-size: 0.8rem; color: var(--brand-primary); text-transform: uppercase; font-weight: bold;"><?php echo htmlspecialchars($product->category, ENT_QUOTES, 'UTF-8'); ?></span>
+                        <h3 style="margin: 0.5rem 0;"><?php echo htmlspecialchars($product->title, ENT_QUOTES, 'UTF-8'); ?></h3>
+                        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;"><?php echo htmlspecialchars(mb_strimwidth($product->description, 0, 80, '...'), ENT_QUOTES, 'UTF-8'); ?></p>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <strong style="font-size: 1.25rem; color: var(--success);">ZMW <?php echo number_format($product->price, 2); ?></strong>
+                            <strong style="font-size: 1.25rem; color: var(--brand-emerald);">ZMW <?php echo number_format($product->price, 2); ?></strong>
                             <div style="display:flex; gap:0.5rem;">
-                                <a href="<?php echo URLROOT; ?>/orders/buy/<?php echo $product->id; ?>" class="btn btn-primary" style="padding: 0.5rem 1rem;">Buy Now</a>
-                                <a href="<?php echo URLROOT; ?>/cart/add/<?php echo $product->id; ?>" class="btn btn-glass" style="padding:0.45rem 0.9rem;">Add to Cart</a>
+                                <a href="<?php echo URLROOT; ?>/orders/buy/<?php echo (int) $product->id; ?>" class="btn btn-primary" style="padding: 0.5rem 1rem;">Buy Now</a>
+                                <a href="<?php echo URLROOT; ?>/cart/add/<?php echo (int) $product->id; ?>" class="btn btn-glass" style="padding:0.45rem 0.9rem;">Add to Cart</a>
                             </div>
                         </div>
-                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.8rem; color: var(--text-muted);">
-                            <i class="fa-solid fa-store"></i> Sold by: <?php echo $product->seller_name; ?>
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--glass-border); font-size: 0.8rem; color: var(--text-muted);">
+                            <i class="bi bi-shop"></i> Sold by: <?php echo htmlspecialchars($product->seller_name); ?>
                         </div>
                     </div>
                 </div>
