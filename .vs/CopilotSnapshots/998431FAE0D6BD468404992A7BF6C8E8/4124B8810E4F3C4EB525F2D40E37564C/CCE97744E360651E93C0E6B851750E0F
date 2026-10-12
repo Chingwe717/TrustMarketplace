@@ -1,0 +1,19 @@
+﻿<?php require APPROOT . '/views/layouts/header.php'; ?>
+<div style="padding:2rem; max-width:900px; margin:0 auto;">
+	<h2>Checkout</h2>
+	<?php if(empty($data['items'])): ?>
+		<p>No items to checkout.</p>
+	<?php else: ?>
+		<ul>
+			<?php foreach($data['items'] as $it): ?>
+				<li><?php echo htmlspecialchars($it['product_id']) . ' x ' . $it['qty']; ?> — ZMW <?php echo number_format($it['price'] * $it['qty'],2); ?></li>
+			<?php endforeach; ?>
+		</ul>
+		<p><strong>Total:</strong> ZMW <?php echo number_format($data['total'],2); ?></p>
+		<form method="POST" action="">
+			<button class="btn-brand" type="submit">Pay & Hold in Escrow (Mock)</button>
+			<a href="<?php echo URLROOT; ?>/cart" class="btn-glass">Back to cart</a>
+		</form>
+	<?php endif; ?>
+</div>
+<?php require APPROOT . '/views/layouts/footer.php'; ?>

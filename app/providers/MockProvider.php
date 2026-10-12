@@ -1,0 +1,43 @@
+<?php
+require_once __DIR__ . '/PaymentProviderInterface.php';
+class MockProvider implements PaymentProviderInterface {
+	// simple in-memory map persisted to file for demo
+	private $storeFile;
+	public function __construct(){
+		$this->storeFile = dirname(__DIR__,1) . '/storage/mock_provider.json';
+		if(!is_dir(dirname($this->storeFile))) mkdir(dirname($this->storeFile), 0755, true);
+		if(!file_exists($this->storeFile)) file_put_contents($this->storeFile, json_encode([]));
+	}
+
+	private function read(){
+		return json_decode(file_get_contents($this->storeFile), true) ?: [];
+	}
+	private function write($data){ file_put_contents($this->storeFile, json_encode($data)); }
+
+	public function holdFunds($orderId, $amount, $meta = []){
+		$data = $this->read();
+		$ref = 'mock_' . uniqid();
+		$data[$ref] = ['order_id'=>$orderId,'amount'=>$amount,'status'=>'held','meta'=>$meta,'created'=>time()];
+		$this->write($data);
+		return $ref;
+	}
+
+	public function releaseFunds($providerReference){
+		$data = $this->read();
+		if(!isset($data[$providerReference])) return false;
+		$data[$providerReference]['status'] = 'released';
+		$data[$providerReference]['released_at'] = time();
+		$this->write($data);
+		return true;
+	}
+
+	public function refundFunds($providerReference, $amount = null){
+		$data = $this->read();
+		if(!isset($data[$providerReference])) return false;
+		$data[$providerReference]['status'] = 'refunded';
+		$data[$providerReference]['refunded_at'] = time();
+		$data[$providerReference]['refund_amount'] = $amount;
+		$this->write($data);
+		return true;
+	}
+}

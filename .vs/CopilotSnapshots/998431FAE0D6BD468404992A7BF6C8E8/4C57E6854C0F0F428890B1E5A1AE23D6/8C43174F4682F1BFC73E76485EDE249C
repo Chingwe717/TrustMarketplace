@@ -1,0 +1,41 @@
+﻿<?php
+class Admin extends Controller {
+    public function __construct() {
+        if(!isLoggedIn() || $_SESSION['user_role'] != 'admin'){
+            header('location: ' . URLROOT . '/users/login');
+            exit;
+        }
+    }
+
+    public function dashboard() {
+        $data = [
+            'title'           => 'Admin Dashboard',
+            'total_users'     => 0,
+            'total_orders'    => 0,
+            'open_disputes'   => 0,
+            'funds_in_escrow' => 0,
+            'disputes'        => [],
+        ];
+        $this->view('admin/dashboard', $data);
+    }
+
+    public function disputes() {
+        $data = ['title' => 'All Disputes', 'disputes' => []];
+        $this->view('admin/disputes', $data);
+    }
+
+    public function users() {
+        $data = ['title' => 'Manage Users', 'users' => []];
+        $this->view('admin/users', $data);
+    }
+
+    public function sellers() {
+        $data = ['title' => 'Verify Sellers', 'sellers' => []];
+        $this->view('admin/sellers', $data);
+    }
+
+    public function analytics() {
+        $data = ['title' => 'Analytics'];
+        $this->view('admin/analytics', $data);
+    }
+}
