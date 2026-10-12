@@ -32,11 +32,11 @@ $buyer_id = $mysqli->insert_id;
 
 // Insert products
 $stmt = $mysqli->prepare("INSERT INTO products (seller_id, title, description, price, category, stock, images) VALUES (?, ?, ?, ?, ?, ?, ?)");
-$imgJson = json_encode(['uploads/sample1.jpg']);
+$imgJson = json_encode([]);
 $p1 = ['Fresh Maize', 'High quality maize, 50kg bags', 1200.00, 'Agriculture', 20, $imgJson];
 $stmt->bind_param('issdsis', $seller_id, $p1[0], $p1[1], $p1[2], $p1[3], $p1[4], $p1[5]);
 $stmt->execute();
-$p2 = ['Fertilizer Bag', 'NPK fertilizer 50kg', 450.00, 'Agriculture', 50, json_encode(['uploads/sample2.jpg'])];
+$p2 = ['Fertilizer Bag', 'NPK fertilizer 50kg', 450.00, 'Agriculture', 50, json_encode([])];
 $stmt->bind_param('issdsis', $seller_id, $p2[0], $p2[1], $p2[2], $p2[3], $p2[4], $p2[5]);
 $stmt->execute();
 

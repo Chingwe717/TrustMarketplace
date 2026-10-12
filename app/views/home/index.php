@@ -1,8 +1,11 @@
-<?php require APPROOT . '/views/layouts/header.php'; ?>
+<?php
+$data = $data ?? [];
+require APPROOT . '/views/layouts/header.php';
+?>
 
 <section class="hero animate-up">
     <h1>Buy and Sell with <span class="text-gradient">Absolute Confidence</span></h1>
-    <p><?php echo $data['description']; ?></p>
+    <p><?php echo htmlspecialchars($data['description'] ?? '', ENT_QUOTES, 'UTF-8'); ?></p>
     <div class="hero-actions">
         <a href="<?php echo URLROOT; ?>/explore/index" class="btn btn-primary"><i class="bi bi-compass me-2"></i> Explore Products</a>
         <a href="<?php echo URLROOT; ?>/users/register" class="btn btn-outline">Become a Seller</a>
