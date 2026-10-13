@@ -13,4 +13,15 @@ class OrderTest extends TestCase {
 		$res = $orderModel->createEscrow($orderId, 100.00);
 		$this->assertTrue($res);
 	}
+
+	public function testQueryWithoutDatabaseConnectionFailsClearly() {
+		$db = new Database();
+		$ref = new ReflectionProperty(Database::class, 'dbh');
+		$ref->setAccessible(true);
+		$ref->setValue($db, null);
+
+		$this->expectException(RuntimeException::class);
+		$this->expectExceptionMessage('Database connection is not available');
+		$db->query('SELECT 1');
+	}
 }
