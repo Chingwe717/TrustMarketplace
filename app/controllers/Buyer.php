@@ -5,6 +5,7 @@ class Buyer extends Controller {
             header('location: ' . URLROOT . '/users/login'); exit;
         }
         $this->orderModel = $this->model('Order');
+        $this->productModel = $this->model('Product');
     }
 
     // ── Dashboard ────────────────────────────────────────────────────────────
