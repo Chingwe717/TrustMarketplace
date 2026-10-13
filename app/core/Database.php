@@ -24,11 +24,18 @@ class Database {
             $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
         } catch(PDOException $e) {
             $this->error = $e->getMessage();
-            // In a real app we might log this or show a friendly error
+            throw new RuntimeException('Database connection failed: ' . $e->getMessage(), 0, $e);
+        }
+    }
+
+    private function ensureConnection() {
+        if (!$this->dbh) {
+            throw new RuntimeException('Database connection is not available. Check DB_HOST, DB_USER, DB_PASS, and DB_NAME.');
         }
     }
 
     public function query($sql) {
+        $this->ensureConnection();
         $this->stmt = $this->dbh->prepare($sql);
     }
 
@@ -52,6 +59,9 @@ class Database {
     }
 
     public function execute() {
+        if (!$this->stmt) {
+            throw new RuntimeException('No SQL statement has been prepared. Call query() before execute().');
+        }
         return $this->stmt->execute();
     }
 
