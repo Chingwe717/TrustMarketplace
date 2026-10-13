@@ -49,6 +49,33 @@ class Buyer extends Controller {
         header('location: ' . URLROOT . '/buyer/orders');
     }
 
+    // ── Browse marketplace ─────────────────────────────────────────────────
+    public function browse() {
+        $search = trim($_GET['search'] ?? '');
+        $category = trim($_GET['category'] ?? '');
+        $products = $this->productModel->getProducts($search, $category, $_SESSION['user_id']);
+
+        $data = [
+            'title' => 'Browse Market',
+            'products' => $products,
+            'search' => $search,
+            'category' => $category,
+        ];
+        $this->view('buyer/browse', $data);
+    }
+
+    // View one order in detail
+    public function orderdetail($order_id = null) {
+        $order = $this->orderModel->getOrderById((int)$order_id);
+        if (!$order || (int)$order->buyer_id !== (int)$_SESSION['user_id']) {
+            header('location: ' . URLROOT . '/buyer/orders');
+            exit;
+        }
+
+        $data = ['title' => 'Order Details', 'order' => $order];
+        $this->view('buyer/orderdetail', $data);
+    }
+
     // ── Open Dispute ─────────────────────────────────────────────────────────
     public function opendispute($order_id = null) {
         $data = ['title' => 'Open a Dispute', 'order_id' => $order_id, 'desc_err' => ''];
