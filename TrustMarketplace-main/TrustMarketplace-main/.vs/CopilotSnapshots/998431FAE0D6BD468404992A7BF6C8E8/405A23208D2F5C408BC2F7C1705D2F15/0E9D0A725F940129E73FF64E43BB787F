@@ -1,0 +1,159 @@
+﻿<?php
+class Seller extends Controller {
+    public function __construct() {
+        if(!isLoggedIn() || $_SESSION['user_role'] != 'seller'){
+            header('location: ' . URLROOT . '/users/login'); exit;
+        }
+
+    // Seller profile — shows stats and trust info
+    public function profile() {
+        $sellerId = $_SESSION['user_id'];
+        // products and orders
+        $products = $this->productModel->getProductsBySeller($sellerId);
+        $orders = $this->orderModel->getOrdersBySeller($sellerId);
+
+        // trust info
+        require_once APPROOT . '/models/Trust.php';
+        $trust = (new Trust())->computeForSeller($sellerId);
+
+        $data = [
+            'title' => 'My Profile',
+            'products' => $products,
+            'orders' => $orders,
+            'trust' => $trust,
+        ];
+        $this->view('seller/profile', $data);
+    }
+
+    // Request seller verification (KYC)
+    public function verification() {
+        $sellerId = $_SESSION['user_id'];
+        // Handle POST to request verification
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            // create or update seller_verifications record
+            $db = new Database();
+            $db->query('INSERT INTO seller_verifications (user_id, status, requested_at) VALUES (:uid, "pending", NOW()) ON DUPLICATE KEY UPDATE status="pending", requested_at=NOW()');
+            $db->bind(':uid', $sellerId);
+            $db->execute();
+            flash('verification_message', 'Verification requested. Our team will review your documents.');
+            header('location: ' . URLROOT . '/seller/verification'); exit;
+        }
+
+        // show verification status if exists
+        $db = new Database();
+        $db->query('SELECT * FROM seller_verifications WHERE user_id = :uid'); $db->bind(':uid', $sellerId);
+        $rec = $db->single();
+        $data = ['title' => 'Seller Verification', 'verification' => $rec];
+        $this->view('seller/verification', $data);
+    }
+        $this->productModel = $this->model('Product');
+        $this->orderModel   = $this->model('Order');
+    }
+
+    // ── Dashboard ────────────────────────────────────────────────────────────
+    public function dashboard() {
+        $products = $this->productModel->getProductsBySeller($_SESSION['user_id']);
+        $rev      = $this->orderModel->getSellerRevenue($_SESSION['user_id']);
+        // compute up-to-date trust score
+        require_once APPROOT . '/models/Trust.php';
+        $trustModel = new Trust();
+        $trust = $trustModel->computeForSeller($_SESSION['user_id']);
+
+        $data = [
+            'title'           => 'Seller Dashboard',
+            'products'        => $products,
+            'total_products'  => count($products),
+            'total_orders'    => $rev->total_orders  ?? 0,
+            'total_revenue'   => $rev->total_revenue ?? 0,
+            'trust_score'     => $trust['score'],
+            'response_score'  => 90,
+            'completion_rate' => round($trust['completion_rate']),
+            'dispute_rate'    => round($trust['dispute_rate']),
+        ];
+        $this->view('seller/dashboard', $data);
+    }
+
+    // ── Products list ────────────────────────────────────────────────────────
+    public function products() {
+        $search  = trim($_GET['search'] ?? '');
+        $status  = trim($_GET['status'] ?? '');
+        $all     = $this->productModel->getProductsBySeller($_SESSION['user_id']);
+
+        // Filter in PHP to avoid extra queries
+        $filtered = array_filter($all, function($p) use ($search, $status) {
+            if ($search && stripos($p->title, $search) === false) return false;
+            if ($status && $p->status !== $status) return false;
+            return true;
+        });
+
+        $active = array_filter($all, fn($p) => $p->status === 'active');
+        $invVal = array_sum(array_map(fn($p) => $p->price * $p->stock, $all));
+
+        $data = [
+            'title'            => 'My Products',
+            'products'         => array_values($filtered),
+            'total_products'   => count($all),
+            'active_count'     => count($active),
+            'inventory_value'  => $invVal,
+            'search'           => $search,
+            'status_filter'    => $status,
+        ];
+        $this->view('seller/products', $data);
+    }
+
+    // ── Orders ───────────────────────────────────────────────────────────────
+    public function orders() {
+        $filter = trim($_GET['filter'] ?? '');
+        $orders = $this->orderModel->getOrdersBySeller($_SESSION['user_id'], $filter);
+        $income = array_sum(array_map(fn($o) => $o->total, array_filter($orders, fn($o) => $o->status === 'confirmed')));
+
+        $data = [
+            'title'        => 'Incoming Orders',
+            'orders'       => $orders,
+            'filter'       => $filter,
+            'total_income' => $income,
+        ];
+        $this->view('seller/orders', $data);
+    }
+
+    public function updateorder() {
+        if($_SERVER['REQUEST_METHOD'] == 'POST' && isLoggedIn()){
+            $order_id     = (int)$_POST['order_id'];
+            $status       = trim($_POST['status']);
+            $tracking     = trim($_POST['tracking_note'] ?? '');
+            $allowed      = ['shipped','delivered','cancelled'];
+            if(in_array($status, $allowed)){
+                $this->orderModel->updateOrderStatus($order_id, $_SESSION['user_id'], $status, $tracking);
+                flash('order_message', 'Order status updated successfully.');
+            }
+        }
+        header('location: ' . URLROOT . '/seller/orders');
+    }
+
+    // ── Disputes ─────────────────────────────────────────────────────────────
+    public function disputes() {
+        $data = ['title' => 'My Disputes', 'disputes' => []];
+        $this->view('seller/disputes', $data);
+    }
+
+    // ── Trust Score ──────────────────────────────────────────────────────────
+    public function trustscore() {
+        $data = ['title' => 'Trust Score'];
+        $this->view('seller/trustscore', $data);
+    }
+
+    // Browse marketplace as seller (show other sellers' listings)
+    public function browse() {
+        $search = trim($_GET['search'] ?? '');
+        $category = trim($_GET['category'] ?? '');
+        $products = $this->productModel->getProducts($search, $category, $_SESSION['user_id']);
+
+        $data = [
+            'title' => 'Browse Market',
+            'products' => $products,
+            'search' => $search,
+            'category' => $category
+        ];
+        $this->view('seller/browse', $data);
+    }
+}

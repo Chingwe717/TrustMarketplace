@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo $data['title'] ?? SITENAME; ?> - TrustMarket Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo URLROOT; ?>/css/style.css">
+</head>
+<body>
+
+<?php include APPROOT . '/views/includes/sidebar_admin.php'; ?>
+
+<div class="main-content-modern">
+    <div style="max-width:1100px;margin:1rem auto;padding:0 1rem;">
+        <?php
+        if(function_exists('flash')){
+            flash('register_success');
+            flash('register_fail');
+            flash('product_message');
+            flash('order_message');
+            flash('cart_message');
+        }
+        ?>
+    </div>

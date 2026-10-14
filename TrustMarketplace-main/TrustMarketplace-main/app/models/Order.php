@@ -1,0 +1,128 @@
+<?php
+class Order {
+    private $db;
+
+    public function __construct() {
+        $this->db = new Database;
+    }
+
+    // Orders visible to the seller
+    public function getOrdersBySeller($seller_id, $status_filter = '') {
+        $sql = 'SELECT o.*, u.name AS buyer_name, e.status AS escrow_status, e.amount AS escrow_amount
+                FROM orders o
+                LEFT JOIN users u   ON o.buyer_id  = u.id
+                LEFT JOIN escrows e ON e.order_id  = o.id
+                WHERE o.seller_id = :sid';
+        if ($status_filter) { $sql .= ' AND o.status = :sf'; }
+        $sql .= ' ORDER BY o.created_at DESC';
+
+        $this->db->query($sql);
+        $this->db->bind(':sid', $seller_id);
+        if ($status_filter) $this->db->bind(':sf', $status_filter);
+        return $this->db->resultSet();
+    }
+
+    // Orders visible to the buyer
+    public function getOrdersByBuyer($buyer_id, $status_filter = '') {
+        $sql = 'SELECT o.*, u.name AS seller_name, e.status AS escrow_status, e.amount AS escrow_amount
+                FROM orders o
+                LEFT JOIN users u   ON o.seller_id = u.id
+                LEFT JOIN escrows e ON e.order_id  = o.id
+                WHERE o.buyer_id = :bid';
+        if ($status_filter) { $sql .= ' AND o.status = :sf'; }
+        $sql .= ' ORDER BY o.created_at DESC';
+
+        $this->db->query($sql);
+        $this->db->bind(':bid', $buyer_id);
+        if ($status_filter) $this->db->bind(':sf', $status_filter);
+        return $this->db->resultSet();
+    }
+
+    // Seller updates order status (confirm, ship, etc.)
+    public function updateOrderStatus($order_id, $seller_id, $status, $tracking_note = '') {
+        $col = '';
+        if ($status === 'shipped')   $col = ', shipped_at = NOW()';
+        if ($status === 'delivered') $col = ', delivered_at = NOW()';
+
+        $this->db->query("UPDATE orders SET status = :status, tracking_note = :note $col
+                          WHERE id = :id AND seller_id = :sid");
+        $this->db->bind(':status', $status);
+        $this->db->bind(':note',   $tracking_note);
+        $this->db->bind(':id',     $order_id);
+        $this->db->bind(':sid',    $seller_id);
+        return $this->db->execute();
+    }
+
+    // Buyer confirms receipt — triggers escrow release
+    public function confirmReceipt($order_id, $buyer_id) {
+        // Update order
+        $this->db->query("UPDATE orders SET status='confirmed', confirmed_at=NOW() WHERE id=:id AND buyer_id=:bid");
+        $this->db->bind(':id', $order_id);
+        $this->db->bind(':bid', $buyer_id);
+        $this->db->execute();
+
+        // Release escrow
+        $this->db->query("UPDATE escrows SET status='released', settled_at=NOW() WHERE order_id=:oid");
+        $this->db->bind(':oid', $order_id);
+        return $this->db->execute();
+    }
+
+    // Single order for detail view
+    public function getOrderById($order_id) {
+        $this->db->query('SELECT o.*, ub.name AS buyer_name, us.name AS seller_name,
+                          e.status AS escrow_status, e.amount AS escrow_amount
+                          FROM orders o
+                          LEFT JOIN users ub ON o.buyer_id  = ub.id
+                          LEFT JOIN users us ON o.seller_id = us.id
+                          LEFT JOIN escrows e ON e.order_id = o.id
+                          WHERE o.id = :id');
+        $this->db->bind(':id', $order_id);
+        return $this->db->single();
+    }
+
+    // Create a new order and return inserted order id
+    public function createOrder($buyer_id, $seller_id, $itemsArray, $total) {
+        $itemsJson = json_encode($itemsArray);
+        $this->db->query('INSERT INTO orders (buyer_id, seller_id, items, total, status) VALUES (:bid, :sid, :items, :total, "funds_held")');
+        $this->db->bind(':bid', $buyer_id);
+        $this->db->bind(':sid', $seller_id);
+        $this->db->bind(':items', $itemsJson);
+        $this->db->bind(':total', $total);
+        if ($this->db->execute()) {
+            return $this->db->lastInsertId();
+        }
+        return false;
+    }
+
+    // Create escrow entry for order
+    public function createEscrow($order_id, $amount) {
+        $this->db->query('INSERT INTO escrows (order_id, amount, status) VALUES (:oid, :amt, "held")');
+        $this->db->bind(':oid', $order_id);
+        $this->db->bind(':amt', $amount);
+        return $this->db->execute();
+    }
+
+    // Buyer stats
+    public function getBuyerStats($buyer_id) {
+        $this->db->query('SELECT
+            COUNT(*)                                                  AS total_orders,
+            SUM(CASE WHEN o.status="confirmed" THEN 1 ELSE 0 END)    AS completed_orders,
+            SUM(CASE WHEN o.status="disputed"  THEN 1 ELSE 0 END)    AS open_disputes,
+            (SELECT COUNT(*) FROM escrows e JOIN orders o2
+             ON e.order_id=o2.id WHERE o2.buyer_id=:bid2 AND e.status="held") AS active_escrows
+            FROM orders o WHERE o.buyer_id = :bid');
+        $this->db->bind(':bid', $buyer_id);
+        $this->db->bind(':bid2', $buyer_id);
+        return $this->db->single();
+    }
+
+    // Seller revenue stats
+    public function getSellerRevenue($seller_id) {
+        $this->db->query('SELECT
+            COUNT(*)                                                         AS total_orders,
+            COALESCE(SUM(CASE WHEN status="confirmed" THEN total END), 0)   AS total_revenue
+            FROM orders WHERE seller_id = :sid');
+        $this->db->bind(':sid', $seller_id);
+        return $this->db->single();
+    }
+}
