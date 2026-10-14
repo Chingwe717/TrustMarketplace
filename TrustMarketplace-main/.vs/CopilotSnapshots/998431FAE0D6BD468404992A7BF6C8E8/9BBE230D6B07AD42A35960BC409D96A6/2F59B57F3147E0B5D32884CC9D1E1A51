@@ -1,0 +1,33 @@
+﻿<?php
+class Trust {
+	private $db;
+	public function __construct(){ $this->db = new Database(); }
+
+	// Compute trust score for seller using simple heuristic
+	public function computeForSeller($seller_id){
+		// base components: completion rate, dispute rate, average rating (not present), response time (not present)
+		// We'll compute: completion_rate = confirmed_or_completed / total_orders
+		$this->db->query('SELECT COUNT(*) AS total, SUM(CASE WHEN status IN ("confirmed","completed") THEN 1 ELSE 0 END) AS completed, SUM(CASE WHEN status = "disputed" THEN 1 ELSE 0 END) AS disputed FROM orders WHERE seller_id = :sid');
+		$this->db->bind(':sid', $seller_id);
+		$r = $this->db->single();
+		$total = $r->total ?? 0;
+		$completed = $r->completed ?? 0;
+		$disputed = $r->disputed ?? 0;
+
+		$completionRate = $total ? ($completed / $total) * 100 : 100;
+		$disputeRate = $total ? ($disputed / $total) * 100 : 0;
+
+		// simple score formula (0-100)
+		$score = round( (0.7 * $completionRate) + (0.3 * (100 - $disputeRate)) );
+
+		// persist into trust_scores table
+		$this->db->query('INSERT INTO trust_scores (seller_id, score, response_time_score, refund_rate, dispute_rate, completion_rate) VALUES (:sid, :score, NULL, NULL, :dr, :cr) ON DUPLICATE KEY UPDATE score=:score, dispute_rate=:dr, completion_rate=:cr, calculated_at=NOW()');
+		$this->db->bind(':sid', $seller_id);
+		$this->db->bind(':score', $score);
+		$this->db->bind(':dr', $disputeRate);
+		$this->db->bind(':cr', $completionRate);
+		$this->db->execute();
+
+		return ['score'=>$score,'completion_rate'=>$completionRate,'dispute_rate'=>$disputeRate];
+	}
+}

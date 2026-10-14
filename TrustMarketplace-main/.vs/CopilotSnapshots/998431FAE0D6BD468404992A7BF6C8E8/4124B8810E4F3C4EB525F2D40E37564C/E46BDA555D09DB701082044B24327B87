@@ -1,0 +1,11 @@
+﻿<?php
+interface PaymentProviderInterface {
+	// hold funds for order, return provider reference or false
+	public function holdFunds($orderId, $amount);
+
+	// release held funds
+	public function releaseFunds($providerReference);
+
+	// refund funds
+	public function refundFunds($providerReference, $amount = null);
+}

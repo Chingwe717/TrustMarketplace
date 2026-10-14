@@ -1,0 +1,23 @@
+﻿<?php require APPROOT . '/views/layouts/seller_header.php'; ?>
+
+<div class="page-hero">
+	<h1 class="hero-title">Seller Verification</h1>
+	<p class="hero-sub">Request verification to gain a trust badge and higher visibility.</p>
+</div>
+
+<div class="premium-card" style="padding:1.25rem;">
+	<?php if(!empty($data['verification'])): ?>
+		<h4>Status: <?php echo htmlspecialchars($data['verification']->status); ?></h4>
+		<p>Requested at: <?php echo date('M d, Y', strtotime($data['verification']->requested_at)); ?></p>
+		<?php if(!empty($data['verification']->notes)): ?>
+			<p>Notes: <?php echo htmlspecialchars($data['verification']->notes); ?></p>
+		<?php endif; ?>
+	<?php else: ?>
+		<p>You have not requested verification yet. Verified sellers get better placement and trust signals.</p>
+		<form method="POST" action="">
+			<button class="btn-brand" type="submit">Request Verification</button>
+		</form>
+	<?php endif; ?>
+</div>
+
+<?php require APPROOT . '/views/layouts/panel_footer.php'; ?>

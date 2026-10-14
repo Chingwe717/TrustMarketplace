@@ -1,0 +1,103 @@
+<?php require APPROOT . '/views/layouts/buyer_header.php'; ?>
+
+<!-- Page Hero -->
+<div class="page-hero">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+        <div>
+            <h1 class="hero-title">
+                <?php
+                    $hour = (int)date('H');
+                    if ($hour < 12) echo 'Good morning';
+                    elseif ($hour < 17) echo 'Good afternoon';
+                    else echo 'Good evening';
+                ?>, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!
+            </h1>
+            <p class="hero-sub"><?php echo date('l, F j, Y'); ?> — Track your orders and escrow payments below.</p>
+        </div>
+        <a href="<?php echo URLROOT; ?>/buyer/browse" class="btn-brand">
+            <i class="bi bi-shop-window"></i> Browse Market
+        </a>
+    </div>
+</div>
+
+<!-- Stats Grid -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap:1.5rem; margin-bottom:2.5rem;">
+    <div class="stat-grid-card">
+        <div class="icon-wrap" style="background:rgba(99,102,241,0.15);">
+            <i class="bi bi-bag-check text-primary"></i>
+        </div>
+        <div class="stat-val"><?php echo $data['total_orders']; ?></div>
+        <div class="stat-label">Total Orders</div>
+    </div>
+    <div class="stat-grid-card">
+        <div class="icon-wrap" style="background:rgba(245,158,11,0.15);">
+            <i class="bi bi-lock text-warning"></i>
+        </div>
+        <div class="stat-val"><?php echo $data['active_escrows']; ?></div>
+        <div class="stat-label">Funds In Escrow</div>
+    </div>
+    <div class="stat-grid-card">
+        <div class="icon-wrap" style="background:rgba(239,68,68,0.15);">
+            <i class="bi bi-exclamation-triangle" style="color:#ef4444;"></i>
+        </div>
+        <div class="stat-val"><?php echo $data['open_disputes']; ?></div>
+        <div class="stat-label">Open Disputes</div>
+    </div>
+    <div class="stat-grid-card">
+        <div class="icon-wrap" style="background:rgba(16,185,129,0.15);">
+            <i class="bi bi-check-circle text-emerald"></i>
+        </div>
+        <div class="stat-val"><?php echo $data['completed_orders']; ?></div>
+        <div class="stat-label">Completed Orders</div>
+    </div>
+</div>
+
+<!-- Active Orders Table -->
+<div class="premium-card">
+    <div class="premium-card-header">
+        <h5 class="premium-card-title"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Orders</h5>
+        <a href="<?php echo URLROOT; ?>/buyer/orders" class="btn-glass" style="font-size:0.8rem; padding:0.4rem 0.9rem;">View All</a>
+    </div>
+    <div style="overflow-x:auto;">
+        <?php if(empty($data['orders'])): ?>
+        <div style="text-align:center; padding:3rem; opacity:0.5;">
+            <i class="bi bi-cart" style="font-size:3rem; display:block; margin-bottom:1rem;"></i>
+            <p>No orders yet. Start shopping to place your first order!</p>
+            <a href="<?php echo URLROOT; ?>/explore/index" class="btn-brand" style="margin-top:1rem;">Browse the Market</a>
+        </div>
+        <?php else: ?>
+        <table class="table-premium">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Seller</th>
+                    <th>Total (ZMW)</th>
+                    <th>Escrow Status</th>
+                    <th>Order Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($data['orders'] as $o): ?>
+                <tr>
+                    <td style="color:var(--text-dim); font-weight:700;">#<?php echo $o->id; ?></td>
+                    <td><?php echo htmlspecialchars($o->seller_name); ?></td>
+                    <td class="text-emerald fw-800"><?php echo number_format($o->total, 2); ?></td>
+                    <td><span class="status-badge badge-<?php echo strtolower($o->escrow_status ?? 'held'); ?>"><?php echo ucfirst($o->escrow_status ?? 'Held'); ?></span></td>
+                    <td><span class="status-badge badge-<?php echo strtolower($o->status); ?>"><?php echo ucfirst(str_replace('_',' ',$o->status)); ?></span></td>
+                    <td style="color:var(--text-dim); font-size:0.85rem;"><?php echo date('M d, Y', strtotime($o->created_at)); ?></td>
+                    <td>
+                        <a href="<?php echo URLROOT; ?>/buyer/orderdetail/<?php echo $o->id; ?>" class="btn-glass" style="font-size:0.75rem; padding:0.3rem 0.7rem;">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+        <?php endif; ?>
+    </div>
+</div>
+
+<?php require APPROOT . '/views/layouts/panel_footer.php'; ?>
